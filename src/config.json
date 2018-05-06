@@ -1,0 +1,5 @@
+{
+    "aws": {
+        "crypto_delivery_stream": "crypto_data"
+    }
+}
