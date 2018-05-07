@@ -38,7 +38,7 @@ interface KucoinBook {
 class Kucoin {
 
     // amount of milliseconds in 5 minutes
-    interval: number = 1000 * 60 * 5
+    interval: number = 1000 * 60 * 2
     exchangeName: string = 'KUCOIN'
     intervalObject: NodeJS.Timer
     
@@ -61,17 +61,20 @@ class Kucoin {
 
     start() {
         logger.debug('starting kucoin crawler')
-        this.intervalObject = setInterval(() => {
-            async.series({
-                ticker: _.bind(this.getTickerData, this),
-                books: _.bind(this.getBooksData, this)
-            }, (error: Error, result: any) => {
-                if (error) {
-                    return logger.error(`Got an error when triggering data fetch on Kucoin: ${JSON.stringify(error)}`)
-                }
-                return this.producer.produce(this.formatData(result))
-            })
-        }, this.interval)
+        this.triggerDataDownload()
+        this.intervalObject = setInterval(_.bind(this.triggerDataDownload, this), this.interval)
+    }
+    
+    triggerDataDownload() {
+        async.series({
+            ticker: _.bind(this.getTickerData, this),
+            books: _.bind(this.getBooksData, this)
+        }, (error: Error, result: any) => {
+            if (error) {
+                return logger.error(`Got an error when triggering data fetch on Kucoin: ${JSON.stringify(error)}`)
+            }
+            return this.producer.produce(this.formatData(result))
+        })
     }
 
     getTickerData(callback: Function) {

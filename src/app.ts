@@ -27,14 +27,15 @@ class FirehoseProducer implements schema.Producer {
 
     produce(data: schema.ProducerPayload[]) {
         logger.info('Sending data payload to firehose')
-        this.firehose.putRecord({
+        const dataRecords = _.map(data, (payload) => {
+                return {
+                    Data: JSON.stringify(payload)   
+                }
+            })
+        this.firehose.putRecordBatch({
             DeliveryStreamName: config.aws.crypto_delivery_stream,
-            Record: {
-                Data: _.map(data, (payload) => {
-                    return JSON.stringify(payload)   
-                }).join('\n')
-            }
-        }, (err: AWS.AWSError, result: AWS.Firehose.PutRecordOutput) => {
+            Records: dataRecords
+        }, (err: AWS.AWSError, result: AWS.Firehose.PutRecordBatchOutput) => {
             if (err) {
                 return logger.error(`There was an error when sending data to firehose ${JSON.stringify(err)}`);
             }
