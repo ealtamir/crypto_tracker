@@ -1,5 +1,9 @@
 
-abstract class Ticker {
+enum ProducerEventType {
+    exchange = 'EXCHANGE_TICKER'
+}
+
+interface ProducerPayload {
     name: String
     symbol: String
     pair: String
@@ -10,13 +14,27 @@ abstract class Ticker {
     spread: Number
     high: Number
     low: Number
-    book_buy_log: Number[]
-    book_sell_log: Number[]
-    trades: Number
+    book_buy: BookEntry[]
+    book_sell: BookEntry[]
+    trades?: Number
+    eventType: ProducerEventType
 }
 
-class KucoinTicker extends Ticker {
+interface BookEntry {
+    price: number
+    amount: number
+    usd_total?: number
+}
+
+interface KucoinProducer extends ProducerPayload {
     exchange: 'Kucoin'
+    eventType: ProducerEventType.exchange
 }
 
-export { KucoinTicker }
+interface Producer {
+
+    produce: (data: KucoinProducer[]) => void
+
+}
+
+export { KucoinProducer, BookEntry, Producer, ProducerPayload, ProducerEventType }

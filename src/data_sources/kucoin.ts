@@ -3,18 +3,49 @@ import * as async from 'async'
 import { logger } from '../logging_tools';
 import * as _ from 'lodash'
 import * as schema from '../schemas'
+import moment from 'moment';
 
-interface Consumer {
-
-    consume: (data: schema.KucoinTicker[]) => void
-
+interface KucoinAPIPayload {
+    success: boolean
+    code: string
+    msg: string
+    timestamp: number
+    data: KucoinTicker[] | KucoinBook
+}
+interface KucoinTicker {
+    coinType: string
+    trading: boolean
+    symbol: string
+    lastDealPrice: number
+    buy: number
+    sell: number
+    change: number
+    coinTypePair: string
+    sort: number
+    feeRate: number
+    volValue: number
+    high: number
+    datetime: number
+    vol: number
+    low: number
+    changeRate: number
+}
+interface KucoinBook {
+    SELL: Number[][]
+    BUY: Number[][]
 }
 
 class Kucoin {
+
+    // amount of milliseconds in 5 minutes
+    interval: number = 1000 * 60 * 5
+    exchangeName: string = 'KUCOIN'
+    intervalObject: NodeJS.Timer
+    
     tickerURL: string = 'https://api.kucoin.com/v1/market/open/symbols'
     booksURL: string = 'https://api.kucoin.com/v1/open/orders'
 
-    consumer: Consumer
+    producer: schema.Producer
 
     pairs: string[] = [
         "BTC-USDT", "ETH-USDT", "BCH-USDT",
@@ -24,21 +55,23 @@ class Kucoin {
         "LTC-USDT", "EOS-USDT"
     ]
 
-    constructor(consumer: Consumer) {
-        this.consumer = consumer
+    constructor(producer: schema.Producer) {
+        this.producer = producer
     }
 
     start() {
         logger.debug('starting kucoin crawler')
-        async.series({
-            ticker: this.getTickerData,
-            books: this.getBooksData
-        }, (error: Error, result: any) => {
-            if (error) {
-                return logger.error(`Got an error when triggering data fetch on Kucoin: ${JSON.stringify(error)}`)
-            }
-            this.consumer.consume(this.formatData(result))
-        })
+        this.intervalObject = setInterval(() => {
+            async.series({
+                ticker: _.bind(this.getTickerData, this),
+                books: _.bind(this.getBooksData, this)
+            }, (error: Error, result: any) => {
+                if (error) {
+                    return logger.error(`Got an error when triggering data fetch on Kucoin: ${JSON.stringify(error)}`)
+                }
+                return this.producer.produce(this.formatData(result))
+            })
+        }, this.interval)
     }
 
     getTickerData(callback: Function) {
@@ -50,7 +83,7 @@ class Kucoin {
                 json: true
             }, (error, response, body) => {
                 logger.debug(`got response ${response.statusCode} from ticker endpoint`)
-                if (response.statusCode !== 200) {
+                if (response.statusCode !== 200 || !body.success) {
                     return cb(error)
                 }
                 return cb(null, body)
@@ -76,7 +109,7 @@ class Kucoin {
                     }, (error, response, body) => {
                         logger.debug(`got response ${response.statusCode} from books endpoint for ${symbol}`)
                         setTimeout(() => {
-                            if (response.statusCode !== 200) {
+                            if (response.statusCode !== 200 || !body.success) {
                                 return cb1(error)
                             }
                             return cb1(null, body)
@@ -88,8 +121,36 @@ class Kucoin {
         }, {}), callback)
     }
 
-    formatData(result: any): schema.KucoinTicker[] {
-        return []
+    formatData(result: any): schema.KucoinProducer[] {
+        const ticker: KucoinAPIPayload = <KucoinAPIPayload>result.ticker
+        const book: { [pair: string]: KucoinAPIPayload } = result.books
+        const toBookEntries = (data: Number[][]): schema.BookEntry[] => {
+            return _.map(data, (el: Number[]) => {
+                return <schema.BookEntry>{ price: el[0], amount: el[1], usd_total: el[2] } 
+            })
+        }
+        const timestamp = moment().toISOString()
+        const data = _.map(ticker.data, (tickerData: KucoinTicker) => {
+            const bookApiPayload = <KucoinAPIPayload>book[tickerData.symbol]
+            const bookData: KucoinBook = <KucoinBook>bookApiPayload.data
+            return <schema.KucoinProducer>{
+                exchange: this.exchangeName,
+                symbol: tickerData.coinType,
+                name: tickerData.coinType,
+                pair: tickerData.symbol,
+                timestamp: timestamp,
+                volume_USD: tickerData.volValue,
+                buy: tickerData.buy,
+                sell: tickerData.sell,
+                high: tickerData.high,
+                low: tickerData.low,
+                book_buy: toBookEntries(bookData.BUY),
+                book_sell: toBookEntries(bookData.SELL),
+                spread: Math.abs(tickerData.sell - tickerData.buy),
+                eventType: schema.ProducerEventType.exchange
+            }
+        })
+        return data
     }
 }
 
