@@ -31,7 +31,7 @@ class FirehoseProducer implements schema.Producer {
             DeliveryStreamName: config.aws.crypto_delivery_stream,
             Record: {
                 Data: _.map(data, (payload) => {
-                    JSON.stringify(payload)   
+                    return JSON.stringify(payload)   
                 }).join('\n')
             }
         }, (err: AWS.AWSError, result: AWS.Firehose.PutRecordOutput) => {
