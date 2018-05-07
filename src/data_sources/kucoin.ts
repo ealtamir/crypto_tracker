@@ -134,26 +134,31 @@ class Kucoin {
         }
         const timestamp = moment().toISOString()
         const data = _.map(ticker.data, (tickerData: KucoinTicker) => {
-            const bookApiPayload = <KucoinAPIPayload>book[tickerData.symbol]
-            const bookData: KucoinBook = <KucoinBook>bookApiPayload.data
-            return <schema.KucoinProducer>{
-                exchange: this.exchangeName,
-                symbol: tickerData.coinType,
-                name: tickerData.coinType,
-                pair: tickerData.symbol,
-                timestamp: timestamp,
-                volume_USD: tickerData.volValue,
-                buy: tickerData.buy,
-                sell: tickerData.sell,
-                high: tickerData.high,
-                low: tickerData.low,
-                book_buy: toBookEntries(bookData.BUY),
-                book_sell: toBookEntries(bookData.SELL),
-                spread: Math.abs(tickerData.sell - tickerData.buy),
-                eventType: schema.ProducerEventType.exchange
+            try {
+                const bookApiPayload = <KucoinAPIPayload>book[tickerData.symbol]
+                const bookData: KucoinBook = <KucoinBook>bookApiPayload.data
+                return <schema.KucoinProducer>{
+                    exchange: this.exchangeName,
+                    symbol: tickerData.coinType,
+                    name: tickerData.coinType,
+                    pair: tickerData.symbol,
+                    timestamp: timestamp,
+                    volume_USD: tickerData.volValue,
+                    buy: tickerData.buy,
+                    sell: tickerData.sell,
+                    high: tickerData.high,
+                    low: tickerData.low,
+                    book_buy: toBookEntries(bookData.BUY),
+                    book_sell: toBookEntries(bookData.SELL),
+                    spread: Math.abs(tickerData.sell - tickerData.buy),
+                    eventType: schema.ProducerEventType.exchange
+                }
+            } catch (e) {
+                logger.error(`Got error when building producer payload for ${tickerData.symbol} in KUCOIN: ${JSON.stringify(e)}`)
+                return null
             }
         })
-        return data
+        return _.filter(data, el => { return !!el })
     }
 }
 
