@@ -133,6 +133,9 @@ class Kucoin {
             })
         }
         const timestamp = moment().toISOString()
+        if (!ticker || !ticker.data) {
+            return []
+        }
         const data = _.map(ticker.data, (tickerData: KucoinTicker) => {
             try {
                 const bookApiPayload = <KucoinAPIPayload>book[tickerData.symbol]
