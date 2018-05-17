@@ -4,6 +4,7 @@ enum ProducerEventType {
 }
 
 interface ProducerPayload {
+    exchange: string
     name: String
     symbol: String
     pair: String
@@ -31,10 +32,15 @@ interface KucoinProducer extends ProducerPayload {
     eventType: ProducerEventType.exchange
 }
 
+interface BitfinexProducer extends ProducerPayload {
+    exchange: 'Bitfinex'
+    eventType: ProducerEventType.exchange
+}
+
 interface Producer {
 
-    produce: (data: KucoinProducer[]) => void
+    produce: (data: ProducerPayload[], tag?: String) => void
 
 }
 
-export { KucoinProducer, BookEntry, Producer, ProducerPayload, ProducerEventType }
+export { KucoinProducer, BookEntry, Producer, ProducerPayload, ProducerEventType, BitfinexProducer }

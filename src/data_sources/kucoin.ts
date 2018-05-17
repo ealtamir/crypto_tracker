@@ -37,7 +37,7 @@ interface KucoinBook {
 
 class Kucoin {
 
-    // amount of milliseconds in 5 minutes
+    // amount of milliseconds in 2 minutes
     interval: number = 1000 * 60 * 2
     exchangeName: string = 'KUCOIN'
     intervalObject: NodeJS.Timer
@@ -73,7 +73,7 @@ class Kucoin {
             if (error) {
                 return logger.error(`Got an error when triggering data fetch on Kucoin: ${JSON.stringify(error)}`)
             }
-            return this.producer.produce(this.formatData(result))
+            return this.producer.produce(this.formatData(result), 'KUCOIN')
         })
     }
 

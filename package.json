@@ -15,15 +15,18 @@
     "@types/lodash": "^4.14.108",
     "@types/moment": "^2.13.0",
     "@types/request": "^2.47.0",
+    "@types/ws": "^5.1.1",
     "typescript": "^2.8.3"
   },
   "dependencies": {
     "async": "^2.6.0",
-    "aws-sdk": "^2.233.1",
+    "aws-sdk": "^2.241.1",
     "express": "^4.16.3",
     "lodash": "^4.17.10",
     "moment": "^2.22.1",
-    "request": "^2.85.0",
-    "winston": "^3.0.0-rc5"
+    "net": "^1.0.2",
+    "request": "^2.86.0",
+    "winston": "^3.0.0-rc5",
+    "ws": "^5.1.1"
   }
 }

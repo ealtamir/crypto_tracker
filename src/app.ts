@@ -1,10 +1,12 @@
 import { app } from './server'
 import { Kucoin } from './data_sources/kucoin'
+import { Bitfinex } from './data_sources/bitfinex'
 import * as schema from './schemas'
 import * as AWS from 'aws-sdk'
 import { config } from './config'
 import { logger } from './logging_tools'
 import * as _ from 'lodash'
+import * as request from 'request'
 
 
 app.get('/', (req, res) => {
@@ -25,8 +27,9 @@ class FirehoseProducer implements schema.Producer {
         this.firehose = firehose
     }
 
-    produce(data: schema.ProducerPayload[]) {
+    produce(data: schema.ProducerPayload[], tag?: string) {
         logger.info('Sending data payload to firehose')
+        const payloadSize = data.length
         const dataRecords = _.map(data, (payload) => {
                 return {
                     Data: JSON.stringify(payload)   
@@ -37,14 +40,17 @@ class FirehoseProducer implements schema.Producer {
             Records: dataRecords
         }, (err: AWS.AWSError, result: AWS.Firehose.PutRecordBatchOutput) => {
             if (err) {
-                return logger.error(`There was an error when sending data to firehose ${JSON.stringify(err)}`);
+                return logger.error(`There was an error when sending data from ${tag} to firehose ${JSON.stringify(err)}`);
             }
-            return logger.info(`Successfully sent data to firehose ${JSON.stringify(result)}`)
+            return logger.info(`>>> Successfully sent ${payloadSize} data items from ${tag} to firehose`)
         })
     }
-
 }
 
 
-let kucoin = new Kucoin(new FirehoseProducer(firehose))
-kucoin.start()
+const firehoseProducer = new FirehoseProducer(firehose)
+// let kucoin = new Kucoin(new FirehoseProducer(firehose))
+// kucoin.start()
+
+let bitfinex = new Bitfinex(firehoseProducer)
+bitfinex.start()
