@@ -6,7 +6,7 @@ import moment from 'moment';
 
 import * as def from './definitions'
 import * as schemas from '../schemas'
-import { logger } from '../logging_tools'
+import { logger, dogstatsd } from '../logging_tools'
 
 const WebSocket = require('ws')
 
@@ -82,6 +82,7 @@ class Bitfinex implements def.DataSource {
     }
 
     start() {
+        logger.info('Starting bitfinex loop')
         this.getSymbols(this.symbolsURL, (err, response, body) => {
             if (err) {
                 return logger.error(`There was an error retrieving bitfinex symbols: ${JSON.stringify(err)}`)
@@ -126,6 +127,7 @@ class Bitfinex implements def.DataSource {
                         json: true
                     }, (error, response, body) => {
                         if (error) {
+                            dogstatsd.increment('bitfinex.api_call_error')
                             logger.error(`Failed to fetch book data from bitfinex: ${JSON.stringify(error)}`)
                             return cb(error)
                         }
@@ -204,6 +206,7 @@ class Bitfinex implements def.DataSource {
                 this.processTickerUpdate(<number[]>ticker)
             }
         } else {
+            dogstatsd.increment('bitfinex.unknown_message')
             logger.error(`Unknown bitfinex message type: ${JSON.stringify(msg.data)}.`)
         }
     }
@@ -224,6 +227,7 @@ class Bitfinex implements def.DataSource {
             } else if (payload.code === INFO_CODES.RESUME_ENGINE) {
                 // do nothing for now
             } else {
+                dogstatsd.increment('bitfinex.unknown_code')
                 logger.error(`Received invalid info code form bitfinex: ${payload.code}`)
             }
         }

@@ -4,7 +4,7 @@ import { Bitfinex } from './data_sources/bitfinex'
 import * as schema from './schemas'
 import * as AWS from 'aws-sdk'
 import { config } from './config'
-import { logger } from './logging_tools'
+import { logger, dogstatsd } from './logging_tools'
 import * as _ from 'lodash'
 import * as request from 'request'
 
@@ -40,6 +40,7 @@ class FirehoseProducer implements schema.Producer {
             Records: dataRecords
         }, (err: AWS.AWSError, result: AWS.Firehose.PutRecordBatchOutput) => {
             if (err) {
+                dogstatsd.increment('firehose.error')
                 return logger.error(`There was an error when sending data from ${tag} to firehose ${JSON.stringify(err)}`);
             }
             return logger.info(`>>> Successfully sent ${payloadSize} data items from ${tag} to firehose`)

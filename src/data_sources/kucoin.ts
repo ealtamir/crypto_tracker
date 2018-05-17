@@ -60,7 +60,7 @@ class Kucoin {
     }
 
     start() {
-        logger.debug('starting kucoin crawler')
+        logger.info('Starting kucoin loop')
         this.triggerDataDownload()
         this.intervalObject = setInterval(_.bind(this.triggerDataDownload, this), this.interval)
     }

@@ -1,5 +1,8 @@
 import * as winston from 'winston'
+import * as dd from 'hot-shots'
 
+
+const dogstatsd = new dd.StatsD()
 
 const myFormat = winston.format.printf((info: any) => {
     return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
@@ -20,4 +23,4 @@ const logger = winston.createLogger({
 
 logger.info('Logger created')
 
-export { logger }
+export { logger, dogstatsd }
