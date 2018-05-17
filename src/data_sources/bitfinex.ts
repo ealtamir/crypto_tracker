@@ -11,7 +11,7 @@ import { logger } from '../logging_tools'
 const WebSocket = require('ws')
 
 enum INFO_CODES {
-    RESTART_ENGINE = 20059,
+    RESTART_ENGINE = 20051,
     SUSPEND_ENGINE = 20060,
     RESUME_ENGINE = 20061
 }
