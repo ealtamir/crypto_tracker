@@ -52,6 +52,6 @@ class FirehoseProducer implements schema.Producer {
 const firehoseProducer = new FirehoseProducer(firehose)
 
 const kucoin = new Kucoin(new FirehoseProducer(firehose))
-kucoin.start()
+// kucoin.start()
 const bitfinex = new Bitfinex(firehoseProducer)
 bitfinex.start()
