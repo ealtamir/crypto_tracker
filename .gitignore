@@ -5,3 +5,4 @@ dist
 .vscode
 secrets.json
 config.json
+nohup.out
