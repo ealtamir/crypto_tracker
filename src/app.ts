@@ -30,9 +30,9 @@ class FirehoseProducer implements schema.Producer {
     produce(data: schema.ProducerPayload[], tag?: string) {
         logger.info('Sending data payload to firehose')
         const payloadSize = data.length
-        const dataRecords = _.map(data, (payload) => {
+        const dataRecords = _.map(data, (payload, index) => {
                 return {
-                    Data: JSON.stringify(payload)   
+                    Data: JSON.stringify(payload) + '\n'
                 }
             })
         this.firehose.putRecordBatch({
